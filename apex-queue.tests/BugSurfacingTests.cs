@@ -26,7 +26,7 @@ public class BugSurfacingTests
     // EXPECTED TO FAIL intermittently — Math.Max(priority, maxPriority) reads
     // maxPriority non-atomically before the Interlocked.Exchange, so a lower-
     // priority thread can overwrite a higher maxPriority written by a racing
-    // thread. The test runs many rounds and uses a Barrier to maximise overlap.
+    // thread. The test runs many rounds and uses a Barrier to maximize overlap.
     [Fact]
     public async Task Add_Concurrent_MaxPriorityNeverDowngrades()
     {
@@ -84,6 +84,9 @@ public class BugSurfacingTests
     // queue p2 to queue p1 in the gap between reading p2.Count and p1.Count, the
     // item is observed in both queues and the sum exceeds the true total.
     // p2 is inserted first so it is iterated first, making the race reachable.
+    // NOTE: The scenario is acceptable for a concurrent structure 
+    // and more likely to occur under high contention and with a large number of items.
+    // At this point, it's more theoretical than anything since the test seems to always pass.
     [Fact]
     public async Task Count_DuringCrossQueueMoves_CanOvercount()
     {

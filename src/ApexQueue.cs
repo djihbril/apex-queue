@@ -41,7 +41,7 @@ public class ApexQueue<T>
         {
             Interlocked.Exchange(ref maxPriority, Math.Max(priority, maxPriority));
         }
-        payload.GetOrAdd(priority, new ConcurrentQueue<T>()).Enqueue(item);
+        payload.GetOrAdd(priority, _ => new ConcurrentQueue<T>()).Enqueue(item);
     }
 
     public int Count() => payload.IsEmpty ? 0 : payload.Values.Sum(q => q.Count);

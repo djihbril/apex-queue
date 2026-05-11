@@ -8,7 +8,7 @@ public class NormalUseTests
     [Fact]
     public void Take_ReturnsHighestPriorityItemFirst()
     {
-        var q = new ApexQueue<string>();
+        ApexQueue<string> q = new();
         q.Add("low", 1);
         q.Add("high", 10);
         q.Add("mid", 5);
@@ -19,7 +19,7 @@ public class NormalUseTests
     [Fact]
     public void Take_WithinSamePriority_IsFIFO()
     {
-        var q = new ApexQueue<string>();
+        ApexQueue<string> q = new();
         q.Add("first",  5);
         q.Add("second", 5);
         q.Add("third",  5);
@@ -32,7 +32,7 @@ public class NormalUseTests
     [Fact]
     public void Take_DrainsPriorityLevelsInDescendingOrder()
     {
-        var q = new ApexQueue<int>();
+        ApexQueue<int> q = new();
         q.Add(1, 10);
         q.Add(2, 10);
         q.Add(3, 5);
@@ -47,7 +47,7 @@ public class NormalUseTests
     [Fact]
     public void Count_ReflectsTotalItemsAcrossAllPriorities()
     {
-        var q = new ApexQueue<int>();
+        ApexQueue<int> q = new();
         Assert.Equal(0, q.Count());
 
         q.Add(1, 5);
@@ -62,7 +62,7 @@ public class NormalUseTests
     [Fact]
     public void MaxPriority_ReflectsHighestNonEmptyPriority()
     {
-        var q = new ApexQueue<string>();
+        ApexQueue<string> q = new();
         q.Add("a", 3);
         q.Add("b", 7);
 
@@ -72,7 +72,7 @@ public class NormalUseTests
     [Fact]
     public void MaxPriority_UpdatesWhenHighestQueueDrains()
     {
-        var q = new ApexQueue<string>();
+        ApexQueue<string> q = new();
         q.Add("low",  1);
         q.Add("high", 10);
 

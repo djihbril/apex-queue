@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using DJ.Codes;
 using Xunit;
 
@@ -12,7 +13,7 @@ public class BugSurfacingTests
     [Fact]
     public void Take_DrainAllItems_LeavesNoEmptyQueuesInDictionary()
     {
-        var q = new ApexQueue<int>();
+        ApexQueue<int> q = new();
         q.Add(1, priority: 5);
         q.Add(2, priority: 10);
 
@@ -34,11 +35,11 @@ public class BugSurfacingTests
 
         for (int round = 0; round < rounds; round++)
         {
-            var q = new ApexQueue<int>();
-            var barrier = new Barrier(2);
+            ApexQueue<int> q = new();
+            Barrier barrier = new(2);
 
             // Thread A: one add at the highest priority.
-            var t1 = Task.Run(() =>
+            Task t1 = Task.Run(() =>
             {
                 barrier.SignalAndWait();
                 q.Add(1, priority: 100);
@@ -46,7 +47,7 @@ public class BugSurfacingTests
 
             // Thread B: adds at every lower priority — 99 chances to race and
             // overwrite maxPriority with a stale lower value.
-            var t2 = Task.Run(() =>
+            Task t2 = Task.Run(() =>
             {
                 barrier.SignalAndWait();
                 for (int p = 1; p < 100; p++) q.Add(1, priority: p);
@@ -66,9 +67,9 @@ public class BugSurfacingTests
     [Fact]
     public void GetQueues_DirectEnqueue_BypassesMaxPriorityTracking()
     {
-        var q = new ApexQueue<string>();
+        ApexQueue<string> q = new();
         q.Add("task", priority: 5);
-        var liveRef = q.GetQueues()[0]; // grab reference to the live inner queue
+        ConcurrentQueue<string> liveRef = q.GetQueues()[0]; // grab reference to the live inner queue
 
         q.Take();                    // drain; maxPriority resets to 0
         liveRef.Enqueue("injected"); // bypass Add() — maxPriority stays 0
@@ -84,32 +85,32 @@ public class BugSurfacingTests
     // queue p2 to queue p1 in the gap between reading p2.Count and p1.Count, the
     // item is observed in both queues and the sum exceeds the true total.
     // p2 is inserted first so it is iterated first, making the race reachable.
-    // NOTE: The scenario is acceptable for a concurrent structure 
+    // NOTE: The scenario is acceptable for a concurrent structure
     // and more likely to occur under high contention and with a large number of items.
     // At this point, it's more theoretical than anything since the test seems to always pass.
     [Fact]
     public async Task Count_DuringCrossQueueMoves_CanOvercount()
     {
         const int n = 1_000;
-        var q = new ApexQueue<int>();
+        ApexQueue<int> q = new();
         for (int i = 0; i < n; i++) q.Add(i, priority: 2); // inserted first → iterated first
         for (int i = 0; i < n; i++) q.Add(i, priority: 1); // inserted second → iterated second
 
-        var overcountSeen = false;
-        var cts = new CancellationTokenSource();
+        bool overcountSeen = false;
+        CancellationTokenSource cts = new();
 
         // Shuttle: continuously moves items from p2 (highest) to p1, giving
         // Count() a chance to read p2 before the Take and p1 after the Add.
-        var shuttle = Task.Run(() =>
+        Task shuttle = Task.Run(() =>
         {
             while (!cts.Token.IsCancellationRequested)
             {
-                var item = q.Take();
-                q.Add(item == default ? 0 : item, priority: item == default ? 2 : 1);
+                int? item = q.Take();
+                q.Add(item == default ? 0 : item.Value, priority: item == default ? 2 : 1);
             }
         });
 
-        var sampler = Task.Run(() =>
+        Task sampler = Task.Run(() =>
         {
             for (int i = 0; i < 100_000; i++)
                 if (q.Count() > 2 * n) overcountSeen = true;

@@ -1,6 +1,6 @@
 using DJ.Codes;
 
-var queue = new ApexQueue<string>();
+ApexQueue<string> queue = new();
 
 queue.Add("send daily report",     priority: 1);
 queue.Add("restart failing service", priority: 10);

@@ -15,7 +15,7 @@ public class ApexQueue<T>
         {
             return default;
         }
-        if (payload.TryGetValue(MaxPriority, out var queue))
+        if (payload.TryGetValue(MaxPriority, out ConcurrentQueue<T>? queue))
         {
             T? item = default;
             if (queue.TryDequeue(out T? dequeuedItem))

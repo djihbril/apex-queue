@@ -50,7 +50,8 @@ public class ApexQueue<T>
 
     public int Count() => payload.IsEmpty ? 0 : payload.Values.Sum(q => q.Count);
 
-    public List<ConcurrentQueue<T>> GetQueues() => [.. payload.Values];
+    public IReadOnlyList<T[]> GetQueues() =>
+        [.. payload.Values.Select(q => q.ToArray())];
 
     private int ComputeMaxPriority()
     {

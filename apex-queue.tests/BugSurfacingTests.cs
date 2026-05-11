@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using DJ.Codes;
 using Xunit;
 
@@ -62,25 +61,21 @@ public class BugSurfacingTests
         }
     }
 
-    // EXPECTED TO FAIL — GetQueues() returns references to the live internal
-    // ConcurrentQueue<T> objects. Enqueueing via a live ref bypasses Add(), so
-    // maxPriority is never updated. The first Take() after a direct enqueue hits
-    // the else-branch, corrects maxPriority as a side-effect, and returns default
-    // instead of the item that was injected.
+    // FIXED — GetQueues() previously returned live ConcurrentQueue<T> references,
+    // allowing callers to enqueue directly and bypass Add(), leaving maxPriority
+    // stale. GetQueues() now returns a T[] snapshot per priority level, so
+    // external enqueues are impossible and the internal state cannot be corrupted.
     [Fact]
-    public void GetQueues_DirectEnqueue_BypassesMaxPriorityTracking()
+    public void GetQueues_ReturnsSnapshot_IsolatedFromLiveQueue()
     {
         ApexQueue<string> q = new();
         q.Add("task", priority: 5);
-        ConcurrentQueue<string> liveRef = q.GetQueues()[0]; // grab reference to the live inner queue
+        string[] snapshot = q.GetQueues()[0];
 
-        q.Take();                    // drain; maxPriority resets to 0
-        liveRef.Enqueue("injected"); // bypass Add() — maxPriority stays 0
+        q.Add("after", priority: 5); // added after snapshot was taken
 
-        Assert.Equal(1, q.Count()); // Count sees the item via the live ref ✓
-        // FAILS: Take() reads MaxPriority=0, finds no key 0, falls into the else
-        // branch and returns default(string)=null instead of "injected".
-        Assert.Equal("injected", q.Take());
+        Assert.Single(snapshot);        // snapshot captured only "task"
+        Assert.Equal(2, q.Count());     // internal queue has both items
     }
 
     // EXPECTED TO FAIL intermittently — Count() sums inner queue counts one-by-one

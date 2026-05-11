@@ -37,4 +37,4 @@ A thread-safe, generic priority queue backed by a `ConcurrentDictionary<int, Con
 | `Take()` | Dequeue from the highest-priority queue; returns `default` if empty |
 | `Count()` | Total items across all priority levels |
 | `MaxPriority` | Current highest non-empty priority level |
-| `GetQueues()` | Snapshot list of all inner queues |
+| `GetQueues()` | Returns an `IReadOnlyList<T[]>` — one array snapshot per priority level |

@@ -4,7 +4,8 @@ using Xunit;
 
 namespace ApexQueue.Tests;
 
-// All tests in this class are expected to fail with the current implementation.
+// Tests in this class surface known issues. Some are expected to fail;
+// fixed issues are noted inline.
 public class BugSurfacingTests
 {
     // EXPECTED TO FAIL — empty ConcurrentQueue instances are never removed from
@@ -24,10 +25,12 @@ public class BugSurfacingTests
         Assert.Empty(q.GetQueues());
     }
 
-    // EXPECTED TO FAIL intermittently — Math.Max(priority, maxPriority) reads
-    // maxPriority non-atomically before the Interlocked.Exchange, so a lower-
-    // priority thread can overwrite a higher maxPriority written by a racing
-    // thread. The test runs many rounds and uses a Barrier to maximize overlap.
+    // FIXED — the original Math.Max(priority, maxPriority) + Interlocked.Exchange
+    // had a TOCTOU (Time-of-Check to Time-of-Use) race: a lower-priority thread
+    // could read maxPriority before a higher-priority write was visible and then
+    // overwrite it. Replaced with a CAS spin loop that uses the return value of
+    // each failed CompareExchange as the next comparand, closing that window.
+    // The test runs many rounds with a Barrier to maximize thread overlap.
     [Fact]
     public async Task Add_Concurrent_MaxPriorityNeverDowngrades()
     {

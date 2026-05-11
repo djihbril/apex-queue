@@ -37,11 +37,15 @@ public class ApexQueue<T>
 
     public void Add(T item, int priority)
     {
-        if (!payload.ContainsKey(priority))
-        {
-            Interlocked.Exchange(ref maxPriority, Math.Max(priority, maxPriority));
-        }
         payload.GetOrAdd(priority, _ => new ConcurrentQueue<T>()).Enqueue(item);
+
+        int snap = Volatile.Read(ref maxPriority);
+        while (priority > snap)
+        {
+            int old = Interlocked.CompareExchange(ref maxPriority, priority, snap);
+            if (old == snap) break;
+            snap = old;
+        }
     }
 
     public int Count() => payload.IsEmpty ? 0 : payload.Values.Sum(q => q.Count);

@@ -22,7 +22,7 @@ namespace ApexQueue.Tests;
 //    0            — remove immediately; best for non-recycling workloads
 //                  (e.g. monotonically increasing priorities) where
 //                  unbounded dictionary growth is the dominant concern.
-//   >0            — sliding window in milliseconds; lazy cleanup fires on
+//   > 0           — sliding window in milliseconds; lazy cleanup fires on
 //                  the next Take() call after expiry; re-adding to a
 //                  priority resets the clock, avoiding alloc churn for
 //                  bursty workloads that recycle the same priority.

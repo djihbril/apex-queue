@@ -9,7 +9,7 @@ namespace DJ.Codes;
 //                  where the remove+alloc churn exceeds the scan cost.
 //    0            — remove immediately on drain; best for non-recycling
 //                  workloads where unbounded key growth is the concern.
-//   >0            — sliding window in ms; lazy cleanup on the next Take()
+//   > 0           — sliding window in ms; lazy cleanup on the next Take()
 //                  after expiry; re-adding to a priority resets the clock.
 //
 // Cost trade-off: TryRemove costs one per-bucket lock + a future

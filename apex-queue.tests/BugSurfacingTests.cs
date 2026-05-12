@@ -7,20 +7,21 @@ namespace ApexQueue.Tests;
 // fixed issues are noted inline.
 public class BugSurfacingTests
 {
-    // EXPECTED TO FAIL — empty ConcurrentQueue instances are never removed from
-    // the internal dictionary after a priority level drains. Over time this
-    // accumulates unbounded entries (memory leak) and slows ComputeMaxPriority.
+    // FIXED — empty queues now expire based on the emptyQueueExpiryMs
+    // constructor parameter. Passing 0 removes them immediately on drain,
+    // eliminating unbounded dictionary growth for non-recycling workloads.
+    // The default (-1) retains empty queues, which is cheaper for workloads
+    // that recycle the same priority levels. See EmptyQueueExpiryTests for
+    // full trade-off documentation and coverage of all three modes.
     [Fact]
     public void Take_DrainAllItems_LeavesNoEmptyQueuesInDictionary()
     {
-        ApexQueue<int> q = new();
+        ApexQueue<int> q = new(emptyQueueExpiryMs: 0);
         q.Add(1, priority: 5);
         q.Add(2, priority: 10);
 
         while (q.Count() > 0) q.Take();
 
-        // After a full drain the internal dictionary should have no entries;
-        // with the current code it retains two empty ConcurrentQueue objects.
         Assert.Empty(q.GetQueues());
     }
 

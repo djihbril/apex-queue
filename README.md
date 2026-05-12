@@ -77,7 +77,7 @@ dotnet test
 
 | Member | Description |
 |--------|-------------|
-| `ApexQueue(int emptyQueueExpiryMs = -1)` | `-1` never removes empty queues (default), `0` removes immediately on drain, `>0` sliding expiry window in milliseconds (ms) |
+| `ApexQueue(int emptyQueueExpiryMs = -1)` | `-1` never removes empty queues (default), `0` removes immediately on drain, `> 0` sliding expiry window in milliseconds (ms) |
 | `Add(T item, int priority)` | Enqueue an item at the given priority level |
 | `Take()` | Dequeue from the highest-priority non-empty queue; returns `default` if empty |
 | `Count()` | Total item count across all priority levels |
@@ -102,7 +102,7 @@ while (priority > snap)
 
 The key detail: on a failed CAS, the returned value (`old`) is used directly as the next comparand rather than re-reading from memory. Re-reading opens a window where another write can slip between the failed CAS and the next snapshot — the root cause of a 50% failure rate in the concurrency test under the initial do-while formulation.
 
-`Count()` sums inner-queue counts non-atomically — an item moving between queues during iteration can be counted twice. This is an accepted trade-off of the lock-free design and is documented in `BugSurfacingTests`.
+`Count()` sums inner-queue counts non-atomically — an item moving between queues during iteration can be counted twice. This is an accepted trade-off of the lock-free design since items will not be expected to change queues, and is documented in `BugSurfacingTests`.
 
 ---
 
@@ -126,7 +126,7 @@ Before writing a single test, Claude Code performed a full static analysis of th
 
 Rather than fixing issues immediately, Claude Code first wrote a `BugSurfacingTests` class with one test per identified issue, **each intentionally expected to fail**. This produced a concrete regression baseline before any code changed — a discipline that is easy to skip under time pressure but invaluable when validating fixes.
 
-The concurrent `maxPriority` downgrade test used a `Barrier` to synchronise two threads at the start of each round and ran 50 rounds to maximise scheduling overlap and race exposure.
+The concurrent `maxPriority` downgrade test used a `Barrier` to synchronize two threads at the start of each round and ran 50 rounds to maximize scheduling overlap and race exposure.
 
 ### Phase 3 — Fixes, with a diagnostic detour
 
@@ -149,7 +149,7 @@ A `var` → explicit-type pass was applied across all files, making every local 
 
 ### Phase 5 — Continuous Integration/Continuous Deployment (CI/CD)
 
-A GitHub Actions workflow was added to run the full test suite on every push and pull request. Claude Code fetched and analysed the first run's logs, caught two categories of warnings, and resolved both:
+A GitHub Actions workflow was added to run the full test suite on every push and pull request. Claude Code fetched and analyzed the first run's logs, caught two categories of warnings, and resolved both:
 
 - **xUnit2013** — four `Assert.Equal(1, collection.Count)` calls replaced with `Assert.Single(collection)`
 - **Node.js 20 deprecation** — an initial `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24` workaround was tried but the warning persisted; Claude Code checked the action release history and identified that `actions/checkout@v6` and `actions/setup-dotnet@v5` are the versions that natively target Node.js 24, resolving the warning cleanly

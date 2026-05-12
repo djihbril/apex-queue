@@ -41,7 +41,7 @@ public class EmptyQueueExpiryTests
         ApexQueue<int> q = new();
         q.Add(1, priority: 5);
         q.Take();
-        Assert.Equal(1, q.GetQueues().Count);
+        Assert.Single(q.GetQueues());
     }
 
     // Immediate (0): each drain removes the empty queue from the dictionary
@@ -70,7 +70,7 @@ public class EmptyQueueExpiryTests
         q.Add(2, priority: 5); // re-add resets the timer to T≈50ms
         Thread.Sleep(150);     // T≈200ms total, but only 150ms since reset
         q.Take();              // lazy sweep: 150ms < 200ms, priority 5 kept
-        Assert.Equal(1, q.GetQueues().Count);
+        Assert.Single(q.GetQueues());
     }
 
     // Sliding: a queue that stays empty past the window is removed on the
@@ -84,7 +84,7 @@ public class EmptyQueueExpiryTests
         q.Take();          // drains priority 10, timer starts at T≈0
         Thread.Sleep(150); // T≈150ms > 100ms window
         q.Take();          // sweep removes expired priority 10; dequeues from priority 5
-        Assert.Equal(1, q.GetQueues().Count);
+        Assert.Single(q.GetQueues());
     }
 
     // Sliding: a queue that is still within its window is kept even when
@@ -97,6 +97,6 @@ public class EmptyQueueExpiryTests
         q.Take();          // queue empty, timer starts
         Thread.Sleep(50);  // T≈50ms — well within 500ms window
         q.Take();          // sweep: 50ms < 500ms, priority 5 not removed
-        Assert.Equal(1, q.GetQueues().Count);
+        Assert.Single(q.GetQueues());
     }
 }
